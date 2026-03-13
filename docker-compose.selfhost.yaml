@@ -1,0 +1,92 @@
+services:
+  seaweedfs:
+    image: chrislusf/seaweedfs:latest
+    container_name: sake-seaweedfs
+    command:
+      - /bin/sh
+      - -ec
+      - |
+        mkdir -p /etc/seaweedfs
+        cat >/etc/seaweedfs/s3.conf <<'EOF'
+        {
+          "identities": [
+            {
+              "name": "sake",
+              "credentials": [
+                {
+                  "accessKey": "${S3_ACCESS_KEY_ID:-sakeadmin}",
+                  "secretKey": "${S3_SECRET_ACCESS_KEY:-sakeadminsecret}"
+                }
+              ],
+              "actions": ["Admin", "Read", "Write", "List", "Tagging"]
+            }
+          ]
+        }
+        EOF
+        exec weed server -dir=/data -ip=seaweedfs -ip.bind=0.0.0.0 -s3 -s3.port=8333 -s3.config=/etc/seaweedfs/s3.conf
+    environment:
+      WEED_SERVER_VOLUME_MAX: 0
+    ports:
+      - "8333:8333"
+      - "9333:9333"
+    volumes:
+      - seaweedfs-data:/data
+
+  seaweedfs-init:
+    image: amazon/aws-cli:2
+    container_name: sake-seaweedfs-init
+    depends_on:
+      seaweedfs:
+        condition: service_started
+    environment:
+      AWS_ACCESS_KEY_ID: ${S3_ACCESS_KEY_ID:-sakeadmin}
+      AWS_SECRET_ACCESS_KEY: ${S3_SECRET_ACCESS_KEY:-sakeadminsecret}
+      AWS_DEFAULT_REGION: ${S3_REGION:-us-east-1}
+    entrypoint:
+      - /bin/sh
+      - -ec
+      - |
+        until aws --endpoint-url http://seaweedfs:8333 s3api list-buckets >/dev/null 2>&1; do
+          sleep 1
+        done
+        aws --endpoint-url http://seaweedfs:8333 s3api head-bucket --bucket "${S3_BUCKET:-sake}" >/dev/null 2>&1 || \
+          aws --endpoint-url http://seaweedfs:8333 s3api create-bucket --bucket "${S3_BUCKET:-sake}"
+    restart: "no"
+
+  z-ui:
+    build:
+      context: ./z-ui
+      dockerfile: dockerfile
+      target: runtime
+      args:
+        PUBLIC_WEBAPP_VERSION: ${PUBLIC_WEBAPP_VERSION:-dev-selfhost}
+        PUBLIC_WEBAPP_GIT_TAG: ${PUBLIC_WEBAPP_GIT_TAG:-}
+        PUBLIC_WEBAPP_COMMIT_SHA: ${PUBLIC_WEBAPP_COMMIT_SHA:-}
+        PUBLIC_WEBAPP_RELEASED_AT: ${PUBLIC_WEBAPP_RELEASED_AT:-}
+    image: z-ui
+    container_name: z-ui-selfhost
+    ports:
+      - "5173:3000"
+    environment:
+      LIBSQL_URL: ${LIBSQL_URL:-file:/data/sake.db}
+      LIBSQL_AUTH_TOKEN: ${LIBSQL_AUTH_TOKEN:-}
+      S3_ENDPOINT: ${S3_ENDPOINT:-http://seaweedfs:8333}
+      S3_REGION: ${S3_REGION:-us-east-1}
+      S3_BUCKET: ${S3_BUCKET:-sake}
+      S3_ACCESS_KEY_ID: ${S3_ACCESS_KEY_ID:-sakeadmin}
+      S3_SECRET_ACCESS_KEY: ${S3_SECRET_ACCESS_KEY:-sakeadminsecret}
+      S3_FORCE_PATH_STYLE: ${S3_FORCE_PATH_STYLE:-true}
+      PUBLIC_WEBAPP_VERSION: ${PUBLIC_WEBAPP_VERSION:-dev-selfhost}
+      PUBLIC_WEBAPP_GIT_TAG: ${PUBLIC_WEBAPP_GIT_TAG:-}
+      PUBLIC_WEBAPP_COMMIT_SHA: ${PUBLIC_WEBAPP_COMMIT_SHA:-}
+      PUBLIC_WEBAPP_RELEASED_AT: ${PUBLIC_WEBAPP_RELEASED_AT:-}
+    volumes:
+      - libsql-data:/data
+      - ./koreaderPlugins/sake.koplugin:/app/koreaderPlugins/sake.koplugin:ro
+    depends_on:
+      seaweedfs-init:
+        condition: service_completed_successfully
+
+volumes:
+  seaweedfs-data:
+  libsql-data:

@@ -1,0 +1,100 @@
+.root {
+	display: grid;
+	align-content: start;
+	gap: 1.5rem;
+	padding-bottom: 0;
+
+	:global(.settings-pane-heading) {
+		display: grid;
+		gap: 0.25rem;
+	}
+
+	:global(.settings-pane-heading h4) {
+		margin: 0;
+		font-size: 1.125rem;
+		font-weight: 500;
+		line-height: 1.5;
+		color: var(--color-text-primary);
+	}
+
+	:global(.settings-pane-heading p) {
+		margin: 0;
+		font-size: 0.75rem;
+		line-height: 1.5;
+		color: var(--color-text-muted);
+	}
+
+	:global(.settings-pane-group-roomy .settings-data-list) {
+		display: grid;
+		gap: 0.75rem;
+	}
+
+	:global(.settings-pane-group-compact .settings-data-list) {
+		display: grid;
+		gap: 0.5rem;
+	}
+
+	:global(.settings-data-row) {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 1rem;
+		padding: 0.5rem 0;
+	}
+
+	:global(.settings-data-row dt),
+	:global(.settings-data-row dd) {
+		margin: 0;
+		font-size: 0.875rem;
+		line-height: 1.5;
+	}
+
+	:global(.settings-data-row dt) {
+		color: var(--color-text-muted);
+	}
+
+	:global(.settings-data-row dd) {
+		color: var(--color-text-primary);
+		text-align: right;
+	}
+
+	:global(.settings-divider) {
+		height: 1px;
+		background: var(--color-border);
+	}
+
+	:global(.settings-mono-value) {
+		font-family: var(--font-mono, 'JetBrains Mono', monospace);
+	}
+
+	:global(.settings-about-card) {
+		display: grid;
+		gap: 0.5rem;
+		padding: 1rem;
+		border-radius: 0.75rem;
+		background: rgba(30, 34, 48, 0.3);
+	}
+
+	:global(.settings-about-title) {
+		margin: 0;
+		font-size: 0.875rem;
+		line-height: 1.5;
+		color: var(--color-text-primary);
+	}
+
+	:global(.settings-about-card p) {
+		margin: 0;
+		font-size: 0.75rem;
+		line-height: 1.625;
+		color: var(--color-text-muted);
+	}
+
+	:global(.settings-source-link) {
+		color: var(--color-primary);
+		text-decoration: none;
+
+		&:hover {
+			text-decoration: underline;
+		}
+	}
+}

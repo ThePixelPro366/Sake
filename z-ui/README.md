@@ -1,0 +1,74 @@
+# z-ui
+
+Small fullstack SvelteKit app for searching Z-Library, downloading books, and syncing a personal library/progress data.
+
+It runs as a single SvelteKit service (Svelte 5 + adapter-node), with API routes and server-side logic in the same repo.
+
+## Quick start
+
+```bash
+bun install
+bun run dev
+```
+
+Open `http://localhost:5173`.
+
+## Environment
+
+Copy `.env.example` to `.env` and fill in required values.
+
+Main groups:
+- Generic libSQL database config (`LIBSQL_*`)
+- Generic S3-compatible storage config (`S3_*`)
+- Basic auth credentials for API access
+- Optional Vite dev host overrides (`VITE_ALLOWED_HOSTS`, comma-separated)
+- Optional search-provider activation (`ACTIVATED_PROVIDERS`, comma-separated; providers are opt-in, so leave unset/empty to disable search entirely)
+
+`LIBSQL_AUTH_TOKEN` is optional. For local self-hosting, `LIBSQL_URL=file:/data/sake.db` is supported.
+For Cloudflare R2, use `S3_ENDPOINT=https://<account-id>.r2.cloudflarestorage.com`, `S3_REGION=auto`, and `S3_FORCE_PATH_STYLE=false`.
+
+## Self-host reference stack
+
+The repository root includes [`docker-compose.selfhost.yaml`](../docker-compose.selfhost.yaml) as a self-host reference stack.
+
+It uses:
+- a file-backed libSQL target by default (`LIBSQL_URL=file:/data/sake.db`)
+- SeaweedFS as the primary self-hosted S3-compatible object store example
+
+Start it from the repository root with:
+
+```bash
+docker compose -f docker-compose.yaml up --build
+```
+
+You can switch to another libSQL-compatible target or S3-compatible backend by overriding the `LIBSQL_*` and `S3_*` environment variables.
+
+## Useful scripts
+
+```bash
+bun run dev
+bun run build
+bun run preview
+bun run check
+bun run db:generate
+bun run db:migrate
+```
+
+One-time baseline for already-migrated databases:
+
+```bash
+node --env-file=.env ./scripts/db/mark-drizzle-baseline.mjs
+```
+
+## Project layout
+
+- `src/routes`: Svelte pages + API endpoints (`+server.ts`)
+- `src/lib/client`: browser-facing API client wrappers
+- `src/lib/server/domain`: domain entities + pure business rules
+- `src/lib/server/application`: use-cases + ports + composition wiring
+- `src/lib/server/infrastructure`: DB/repository/storage/external clients
+
+## License
+
+This repository is licensed under the GNU Affero General Public License v3.0 (`AGPL-3.0-only`).
+See `../LICENSE` at the repository root for the full license text.
