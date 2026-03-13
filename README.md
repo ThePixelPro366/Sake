@@ -20,10 +20,15 @@ The idea is simple: keep your library in one place, sync reading progress betwee
 
 ## A few images
 
+### Webapp
 ![Library](./docs/img/library.png)
 ![Detail](./docs/img/detail.png)
 ![Progress](./docs/img/progress.png)
 ![Search](./docs/img/search.png)
+
+### KOReader Plugin
+![KOReader Menu](./docs/img/SakeDownload.png)
+![KOReader Download](./docs/img/SakeMenu.png)
 
 ## Notes
 
