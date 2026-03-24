@@ -261,11 +261,9 @@ export class OpenLibrarySearchProvider implements SearchProviderPort {
 		_context: SearchProviderContext
 	): Promise<ApiResult<SearchResultBook[]>> {
 		const limit = Math.max(1, Math.min(input.filters?.limitPerProvider ?? 20, 100));
-		const fields = encodeURIComponent(
-			'key,title,author_name,language,first_publish_year,cover_i,isbn,number_of_pages_median,ebook_access,public_scan_b,ia'
-		);
+		const fields = 'key,title,author_name,language,first_publish_year,cover_i,isbn,number_of_pages_median,ebook_access,public_scan_b,ia';
 		const url = `https://openlibrary.org/search.json?q=${encodeURIComponent(input.query)}&limit=${limit}&fields=${fields}`;
-
+		
 		try {
 			const response = await this.fetchSearch(url);
 			if (!response.ok) {
