@@ -1,8 +1,10 @@
 import { toastStore } from '$lib/client/stores/toastStore.svelte';
 import { ZUI } from '$lib/client/zui';
 import {
+	parseDateTimeLocalInputValue,
 	parseNullableNumber,
 	toDraftText,
+	toDateTimeLocalInputValue,
 	type DetailTab,
 	type LibraryView,
 	type MetadataDraft
@@ -77,7 +79,8 @@ export class LibraryDetailController {
 		openLibraryKey: '',
 		amazonAsin: '',
 		externalRating: '',
-		externalRatingCount: ''
+		externalRatingCount: '',
+		createdAt: ''
 	});
 
 	constructor(private readonly options: LibraryDetailControllerOptions) {}
@@ -157,7 +160,10 @@ export class LibraryDetailController {
 			return;
 		}
 
-		const updatedBook = this.options.applyBookMetadataUpdate(result.value.book);
+		const updatedBook = this.options.applyBookMetadataUpdate({
+			...result.value.book,
+			createdAt: this.selectedBook?.createdAt ?? null
+		});
 		if (updatedBook) {
 			this.selectedBook = updatedBook;
 		}
@@ -208,6 +214,7 @@ export class LibraryDetailController {
 		if (!this.selectedBook || !this.selectedBookDetail || this.isSavingMetadata) {
 			return;
 		}
+		const selectedBookId = this.selectedBook.id;
 
 		const title = this.metadataDraft.title.trim();
 		if (!title) {
@@ -228,7 +235,13 @@ export class LibraryDetailController {
 		}
 
 		this.isSavingMetadata = true;
-		const updateResult = await ZUI.updateLibraryBookMetadata(this.selectedBook.id, {
+		const createdAt = parseDateTimeLocalInputValue(this.metadataDraft.createdAt);
+		if (this.metadataDraft.createdAt.trim() && createdAt === null) {
+			this.isSavingMetadata = false;
+			toastStore.add('Date added must be a valid date and time', 'error');
+			return;
+		}
+		const updateResult = await ZUI.updateLibraryBookMetadata(selectedBookId, {
 			title,
 			author: this.metadataDraft.author.trim() || null,
 			publisher: this.metadataDraft.publisher.trim() || null,
@@ -248,7 +261,8 @@ export class LibraryDetailController {
 			openLibraryKey: this.metadataDraft.openLibraryKey.trim() || null,
 			amazonAsin: this.metadataDraft.amazonAsin.trim() || null,
 			externalRating: parseNullableNumber(this.metadataDraft.externalRating),
-			externalRatingCount: parseNullableNumber(this.metadataDraft.externalRatingCount)
+			externalRatingCount: parseNullableNumber(this.metadataDraft.externalRatingCount),
+			createdAt
 		});
 		this.isSavingMetadata = false;
 
@@ -257,10 +271,41 @@ export class LibraryDetailController {
 			return;
 		}
 
-		const detailResult = await ZUI.getLibraryBookDetail(this.selectedBook.id);
+		const detailResult = await ZUI.getLibraryBookDetail(selectedBookId);
 		if (detailResult.ok) {
 			this.selectedBookDetail = detailResult.value;
 			this.initializeMetadataDraft(detailResult.value);
+
+			const updatedBook = this.options.applyBookMetadataUpdate({
+				id: selectedBookId,
+				zLibId: this.selectedBook.zLibId,
+				title: detailResult.value.title,
+				author: detailResult.value.author,
+				publisher: detailResult.value.publisher,
+				series: detailResult.value.series,
+				seriesIndex: detailResult.value.seriesIndex,
+				volume: detailResult.value.volume,
+				edition: detailResult.value.edition,
+				identifier: detailResult.value.identifier,
+				pages: detailResult.value.pages,
+				description: detailResult.value.description,
+				googleBooksId: detailResult.value.googleBooksId,
+				openLibraryKey: detailResult.value.openLibraryKey,
+				amazonAsin: detailResult.value.amazonAsin,
+				externalRating: detailResult.value.externalRating,
+				externalRatingCount: detailResult.value.externalRatingCount,
+				cover: this.metadataDraft.cover.trim() || null,
+				extension: this.selectedBook.extension,
+				filesize: this.selectedBook.filesize,
+				language: this.metadataDraft.language.trim() || null,
+				year: detailResult.value.year,
+				month: detailResult.value.month,
+				day: detailResult.value.day,
+				createdAt
+			});
+			if (updatedBook) {
+				this.selectedBook = updatedBook;
+			}
 		}
 
 		await this.options.loadLibrary();
@@ -548,7 +593,8 @@ export class LibraryDetailController {
 			openLibraryKey: toDraftText(detail.openLibraryKey),
 			amazonAsin: toDraftText(detail.amazonAsin),
 			externalRating: toDraftText(detail.externalRating),
-			externalRatingCount: toDraftText(detail.externalRatingCount)
+			externalRatingCount: toDraftText(detail.externalRatingCount),
+			createdAt: toDateTimeLocalInputValue(this.selectedBook?.createdAt ?? null)
 		};
 	}
 

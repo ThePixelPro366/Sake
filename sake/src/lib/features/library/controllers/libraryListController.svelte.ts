@@ -54,6 +54,7 @@ export interface LibraryMetadataUpdate {
 	year: number | null;
 	month: number | null;
 	day: number | null;
+	createdAt: string | null;
 }
 
 type BulkActionResult = { ok: true } | { ok: false; message: string };
@@ -642,7 +643,8 @@ export class LibraryListController {
 			language: updated.language,
 			year: updated.year,
 			month: updated.month,
-			day: updated.day
+			day: updated.day,
+			createdAt: updated.createdAt
 		};
 
 		this.books = [...this.books.slice(0, index), updatedBook, ...this.books.slice(index + 1)];
