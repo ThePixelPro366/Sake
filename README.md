@@ -65,6 +65,10 @@ This setup gives you:
 - Built-in KOReader plugin updater and release delivery
 - Flexible deployment with Docker images or local Bun development
 - libSQL plus S3-compatible storage support for managed or fully self-hosted setups
+- Progressive Web App for easier access
+- OPDS and WebDav Support
+
+OPDS and WebDAV endpoints use HTTP Basic authentication. By default, your normal account password works there. In Settings -> Account, you can optionally set a separate Basic-auth password for those routes while keeping your normal account password valid too.
 
 ## What lives in this repo?
 
