@@ -1,21 +1,27 @@
 import {
 	S3Client,
 	S3ServiceException,
-	ListObjectsV2Command,
 	PutObjectCommand,
 	GetObjectCommand,
 	DeleteObjectCommand,
-	HeadObjectCommand
+	HeadObjectCommand,
 } from '@aws-sdk/client-s3';
 import type { StoragePort } from '$lib/server/application/ports/StoragePort';
 import { Readable } from 'stream';
 import { getS3Config } from '$lib/server/config/infrastructure';
+import { listAllS3Objects } from './S3ListPagination';
 
 export class S3Storage implements StoragePort {
 	private readonly s3: S3Client;
 	private readonly bucket: string;
 
-	constructor() {
+	constructor(s3Client?: S3Client, bucket?: string) {
+		if (s3Client) {
+			this.s3 = s3Client;
+			this.bucket = bucket ?? '';
+			return;
+		}
+
 		const config = getS3Config();
 		this.bucket = config.bucket;
 
@@ -39,7 +45,7 @@ export class S3Storage implements StoragePort {
 			new PutObjectCommand({
 				Bucket: this.bucket,
 				Key: key,
-				// @ts-ignore AWS SDK Body union is wider at runtime than TS infers here
+				// @ts-expect-error AWS SDK's Node stream type is narrower than the port's runtime-compatible stream contract.
 				Body: body,
 				ContentType: contentType ?? 'application/octet-stream'
 			})
@@ -98,15 +104,10 @@ export class S3Storage implements StoragePort {
 	}
 
 	async list(prefix: string): Promise<{ key: string; size: number; lastModified?: Date }[]> {
-		const res = await this.s3.send(
-			new ListObjectsV2Command({
-				Bucket: this.bucket,
-				Prefix: prefix
-			})
-		);
+		const contents = await listAllS3Objects((command) => this.s3.send(command), this.bucket, prefix);
 
 		return (
-			res.Contents?.map((obj) => ({
+			contents?.map((obj) => ({
 				key: obj.Key!,
 				size: obj.Size ?? 0,
 				lastModified: obj.LastModified
